@@ -12,8 +12,9 @@ A simple React-based weather application that allows users to search for cities 
 **Note:** Weather data (humidity, temperature, etc.) is currently hardcoded as placeholders. Future updates will integrate real-time weather data from the OpenWeatherMap API.
 
 ## Screenshots
-
-*Add screenshots of the app here to showcase the UI and functionality.*
+   ![screenShot](public/ss/1.png)
+   ![screenShot](public/ss/2.png)
+   ![screenShot](public/ss/3.png)
 
 ## Technologies Used
 
