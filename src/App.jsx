@@ -7,7 +7,7 @@ import AirIcon from '@mui/icons-material/Air';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useEffect , useState} from 'react';
 function App() { 
-  const ApiKey='3e9cf87c81394e990e5806d4a4cb09ec' 
+  const ApiKey='YourApikey' 
   const [city, setCity] = useState("london"); 
   const [displayData, setDisplayData] = useState([]); 
 
