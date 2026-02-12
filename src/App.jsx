@@ -10,96 +10,166 @@ import CloudIcon from '@mui/icons-material/Cloud';
 import GrainIcon from '@mui/icons-material/Grain'; // for rain
 import AcUnitIcon from '@mui/icons-material/AcUnit'; // for snow
 
-import { useEffect , useState} from 'react';
-function App() { 
+import { useEffect, useState } from 'react';
+function App() {
   const ApiKey = import.meta.env.VITE_API_KEY;
-  const [city, setCity] = useState(""); 
-  const [displayData, setDisplayData] = useState([]); 
+  const [city, setCity] = useState("");
+  const [displayData, setDisplayData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  
 
-function getWeatherIcon(condition) {
-  switch (condition) {
-    case 'Clear':
-      return <WbSunnyIcon sx={{ fontSize: 120, color: 'orange' }} />;
-    case 'Clouds':
-      return <CloudIcon sx={{ fontSize: 120, color: 'grey' }} />;
-    case 'Rain':
-      return <GrainIcon sx={{ fontSize: 120, color: 'blue' }} />;
-    case 'Snow':
-      return <AcUnitIcon sx={{ fontSize: 120, color: 'lightblue' }} />;
-    default:
-      return <WbSunnyIcon sx={{ fontSize: 120, color: 'orange' }} />;
+
+  function getWeatherIcon(condition) {
+    const iconStyle = { fontSize: 120, color: '#f4e4a6', filter: 'drop-shadow(0 0 20px rgba(212, 175, 55, 0.5))' };
+
+    switch (condition) {
+      case 'Clear':
+        return <WbSunnyIcon sx={iconStyle} />;
+      case 'Clouds':
+        return <CloudIcon sx={iconStyle} />;
+      case 'Rain':
+        return <GrainIcon sx={iconStyle} />;
+      case 'Snow':
+        return <AcUnitIcon sx={iconStyle} />;
+      case 'Drizzle':
+        return <GrainIcon sx={iconStyle} />;
+      case 'Thunderstorm':
+        return <GrainIcon sx={iconStyle} />;
+      case 'Mist':
+      case 'Smoke':
+      case 'Haze':
+      case 'Fog':
+        return <CloudIcon sx={iconStyle} />;
+      default:
+        return <WbSunnyIcon sx={iconStyle} />;
+    }
   }
-}
 
 
-  const searchUrl = async (city) => { 
-    const geoRes = await fetch( `http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${ApiKey}` ); 
-    const geoData = await geoRes.json(); 
-    // console.log(geoData);
-    getData(geoData[0].lat, geoData[0].lon);
-    if (!geoData[0]) return; 
-    setDisplayData([geoData[0].name]); 
+  const searchUrl = async (city) => {
+    if (!city.trim()) {
+      setError("Please enter a city name");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const geoRes = await fetch(`http://api.openweathermap.org/geo/1.0/direct?q=${city}&limit=1&appid=${ApiKey}`);
+      const geoData = await geoRes.json();
+
+      if (!geoData || geoData.length === 0) {
+        setError("City not found. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      setDisplayData([geoData[0].name]);
+      await getData(geoData[0].lat, geoData[0].lon);
+    } catch (err) {
+      setError("Failed to fetch weather data. Please try again.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getData = async (lat,lon) => {
-    const weatherRes = await fetch( `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${ApiKey}` ); 
-    const weatherData = await weatherRes.json(); 
-    // console.log(weatherData);
-    setDisplayData(prev => [ ...prev, { humidity: weatherData.main.humidity, temp: weatherData.main.temp, wind: weatherData.wind.speed, visibility: weatherData.visibility ,condition: weatherData.weather[0].main } ]);
+  const getData = async (lat, lon) => {
+    try {
+      const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${ApiKey}`);
+      const weatherData = await weatherRes.json();
+
+      const visibilityInKm = (weatherData.visibility / 1000).toFixed(1);
+
+      setDisplayData(prev => [
+        ...prev,
+        {
+          humidity: weatherData.main.humidity,
+          temp: Math.round(weatherData.main.temp),
+          wind: weatherData.wind.speed.toFixed(1),
+          visibility: visibilityInKm,
+          condition: weatherData.weather[0].main
+        }
+      ]);
+    } catch (err) {
+      setError("Failed to fetch weather details.");
+      console.error(err);
+    }
   }
-    useEffect(() => { 
-      searchUrl(city); }, []);
-  console.log(displayData);
+
+  useEffect(() => {
+    searchUrl(city);
+  }, []);
+
   return (
     <div className="container">
       <div className="innercontainer">
         <div className="nav">
-          <h1>weather</h1>
+          <h1>Weather</h1>
           <div className="navright">
             <input
               type="text"
-              placeholder="Enter City"
+              placeholder="Enter City Name"
               value={city}
               onChange={(e) => setCity(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && searchUrl(city)}
             />
             <p onClick={() => searchUrl(city)}>
               <SearchIcon className="search-icon" />
             </p>
-            </div>
-        </div>
-          {displayData.length > 0 ? <><div className="section">
-          <div className="icon">
-            {displayData[1] && getWeatherIcon(displayData[1].condition)}
           </div>
-          <h1>{displayData[0]}</h1>
         </div>
-        <div className="lastsection">
-          <div className="lastp1">
-            <div className="box"><p>{displayData[1]?.humidity}%</p>
-              <p><WaterDropIcon/>Humidity</p></div>
-            <div className="box"><p>{displayData[1]?.temp}°C</p>
-              <p><ThermostatIcon/>Temperature</p></div>
+
+        {loading ? (
+          <div className="falsesection">
+            <h1>Loading weather data...</h1>
           </div>
-          <div className="lastp2">
-            <div className="box"><p>{displayData[1]?.wind} kph (309°)</p>
-              <p><AirIcon/>WindSpeed</p></div>
-            <div className="box"><p>{displayData[1]?.visibility}km</p>
-              <p><VisibilityIcon/>Visibility </p>
+        ) : error ? (
+          <div className="falsesection">
+            <h1>{error}</h1>
+          </div>
+        ) : displayData.length > 1 ? (
+          <>
+            <div className="section">
+              <div className="icon">
+                {displayData[1] && getWeatherIcon(displayData[1].condition)}
               </div>
+              <h1>{displayData[0]}</h1>
+            </div>
+            <div className="lastsection">
+              <div className="lastp1">
+                <div className="box">
+                  <p>{displayData[1]?.humidity}%</p>
+                  <p><WaterDropIcon />Humidity</p>
+                </div>
+                <div className="box">
+                  <p>{displayData[1]?.temp}°C</p>
+                  <p><ThermostatIcon />Temperature</p>
+                </div>
+              </div>
+              <div className="lastp2">
+                <div className="box">
+                  <p>{displayData[1]?.wind} m/s</p>
+                  <p><AirIcon />Wind Speed</p>
+                </div>
+                <div className="box">
+                  <p>{displayData[1]?.visibility} km</p>
+                  <p><VisibilityIcon />Visibility</p>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="falsesection">
+            <h1>Enter a city name to get started</h1>
           </div>
-        </div></>: <>
-          <div className="falsesection"
-          style={{display:'flex', justifyContent:'center', alignItems:'center', height:'100%' ,color:'grey'}}
-          >
-          <h1>Enter City Name</h1>
-        </div>
-        </>}
+        )}
       </div>
     </div>
   )
 }
 
 export default App
- 
+
