@@ -66,5 +66,5 @@ A simple React-based weather application that allows users to search for cities 
 Feel free to submit issues and pull requests. For major changes, please open an issue first to discuss what you would like to change.
 
 ## License
-
+This project is made by V3nom with 🩷
 This project is licensed under the MIT License.
